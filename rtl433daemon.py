@@ -90,7 +90,7 @@ class RTL_433_detect_class:  # fills variable data with values from rtl_433
                         self.data['Battery'] = "100"
                     else:
                         self.data['Battery'] = "5"
-                    # logger.debug(self.data
+                        # logger.debug(self.data
             return 1
         # logger.debug(line[20:27])
         # 2015-10-07 17:57:44 LaCrosse TX Sensor 7e: Temperature 19.5 C / 67.1 F
@@ -232,7 +232,7 @@ class RTL_433_Domoticz_class:
                     logger.debug('ERROR creating device. skipping for now!')
                     return 0
         except:
-            logger.error("Timout URL (1)")
+            logger.error("Time Out URL (1)")
             pass
         logger.debug('ERROR creating device. Skipping for now!')
         return 0  # Result NOK
@@ -244,7 +244,7 @@ class RTL_433_Domoticz_class:
             search_response = urllib2.urlopen(request)
             search_results = search_response.read()
         except:
-            logger.error("Timout URL (2)")
+            logger.error("Time Out URL (2)")
             # return 0
             pass
         results = json.loads(search_results)
@@ -260,7 +260,7 @@ class RTL_433_Domoticz_class:
         try:
             search_response = urllib2.urlopen(request, timeout=4)
         except urllib2.URLError, e:
-            logger.error("Timout URL (3)")
+            logger.error("Time Out URL (3)")
             pass
             return 0
         search_results = search_response.read()
@@ -284,7 +284,7 @@ class RTL_433_Domoticz_class:
                 logger.debug('Successful')
             return 1  # Result OK
         except:
-            logger.error("Timout URL (4)")
+            logger.error("Time Out URL (4)")
             pass
 
         logger.debug('ERROR creating hardware RTL_433')
@@ -336,7 +336,7 @@ class RTL_433_Domoticz_class:
         elif 'WB' in data:  # 86 WIND
             device_id = "86"  # if entry does not exist this step wil not execute
             return device_id
-        return device_id # should not come here!
+        return device_id  # should not come here!
 
     def push_data(self, data):
         # self.devicelist[Device_id]="123"
@@ -355,6 +355,7 @@ class RTL_433_Domoticz_class:
             try:
                 domoticzid = self.devicelist[data['Device_id']]
             except:
+                logger.error("Could not read device_id from dictionary")
                 domoticzid = 0  # just set false
         if domoticzid:
             logger.debug("pushing data")  # Watch that Battery =0-100 or 255 of no value
@@ -417,7 +418,7 @@ class RTL_433_Domoticz_class:
                     # logger.debug('Successful')
                     return 1  # Result OK
             except:
-                logger.debug("There was an error: Timout URL")
+                logger.error("Time Out URL (5)")
                 pass
 
         else:
