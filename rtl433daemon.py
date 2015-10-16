@@ -8,8 +8,8 @@ from time import sleep
 import logging
 # change serverip and portnumer in below line to reflect your own installation
 servercall = "http://127.0.0.1:8080"
-rtl_433_logfile = "/var/tmp/rtl_433"
-rtl_433_logpath = "/var/tmp"
+rtl_433_logfile = "/var/log/rtl_433"
+rtl_433_logpath = "/var/log"
 deamon_configfile = '/etc/checkdevice_config.json'
 
 
@@ -57,7 +57,7 @@ class RTL_433_detect_class:  # fills variable data with values from rtl_433
             self.data['WD'] = 'NNW'
         return
 
-        # nothing to do for now...
+    # nothing to do for now...
 
     #	1 Pressure (Bar) 0.0 	      	     nvalue=BAR (TBC)
     #	80 TEMP          0.0     	     svalue=TEMP
@@ -90,9 +90,9 @@ class RTL_433_detect_class:  # fills variable data with values from rtl_433
                         self.data['Battery'] = "100"
                     else:
                         self.data['Battery'] = "5"
-                        # logger.debug(self.data
+                    # logger.debug(self.data
             return 1
-            # logger.debug(line[20:27])
+        # logger.debug(line[20:27])
         # 2015-10-07 17:57:44 LaCrosse TX Sensor 7e: Temperature 19.5 C / 67.1 F
         if line[20:27] == 'LaCross':  # ID for LaCrosse is protocolname and ID+type
             # this is as all messages is send as SEPERATE message, not combined
@@ -118,12 +118,12 @@ class RTL_433_detect_class:  # fills variable data with values from rtl_433
                         self.data['Battery'] = "5"
             logger.debug(self.data)
             return 1
-            # Electo SENSORS
-            # 2015-10-07 20:09:31 AlectoV1 Wind Sensor 44: Wind speed 2 units = 0.40 m/s: Wind gust 3 units = 0.60 m/s: Direction 135 degrees: Battery OK
-            # WB = Wind bearing (0-359)
-            # WD = Wind direction (S, SW, NNW, etc.)
-            # WS = Wind speed [km/h]
-            # WG = Gust [km/h]
+        # Electo SENSORS
+        # 2015-10-07 20:09:31 AlectoV1 Wind Sensor 44: Wind speed 2 units = 0.40 m/s: Wind gust 3 units = 0.60 m/s: Direction 135 degrees: Battery OK
+        # WB = Wind bearing (0-359)
+        # WD = Wind direction (S, SW, NNW, etc.)
+        # WS = Wind speed [km/h]
+        # WG = Gust [km/h]
         if line[20:28] == 'AlectoV1':  # ID for prologue is protocolname and ID
             # so AlectoV102 is a vallid name
             self.data['Battery'] = "255"  # set no battery value
@@ -136,7 +136,7 @@ class RTL_433_detect_class:  # fills variable data with values from rtl_433
                 elif member == 'speed':
                     self.data['WS'] = str(msgdata[idx + 1])
                     self.data['Device_id'] = self.data['Device_id'] + 'W'
-                    # correct for same device wind and temp but different streams
+                # correct for same device wind and temp but different streams
                 elif member == 'gust':
                     self.data['WG'] = str(msgdata[idx + 1])
                 elif member == 'Direction':
@@ -161,7 +161,7 @@ class RTL_433_detect_class:  # fills variable data with values from rtl_433
             logger.debug(self.data)
             return 1
 
-            # 2015-10-07 20:05:30 AlectoV1 Rain Sensor 133: Rain 86.75 mm/m2: Battery OK
+        # 2015-10-07 20:05:30 AlectoV1 Rain Sensor 133: Rain 86.75 mm/m2: Battery OK
 
         return 0  # No devices processed
 
@@ -178,11 +178,13 @@ class RTL_433_Domoticz_class:
             with open(self.jsontablefilename) as data_file:
                 self.devicelist = json.load(data_file)
         except:
+            logger.error("Failed loading " + self.jsontablefilename)
             pass
         if not self.check_existance_RTL_433_in_DOMOTICZ():
             self.create_hardware_RTL_433()  # after create check again!
             if not self.check_existance_RTL_433_in_DOMOTICZ():  # Check once more
-                logger.debug("Halting application as hardware RTL_433 cannot be created. Please check server parameters")
+                logger.debug(
+                    "Halting application as hardware RTL_433 cannot be created. Please check server parameters")
                 raise SystemExit(0)  # Exit app as device cannot be created, logging to it would make no sense
 
     def write_jsontable(self):
@@ -230,7 +232,7 @@ class RTL_433_Domoticz_class:
                     logger.debug('ERROR creating device. skipping for now!')
                     return 0
         except:
-            logger.debug("ERROR: Timout URL")
+            logger.error("Timout URL (1)")
             pass
         logger.debug('ERROR creating device. Skipping for now!')
         return 0  # Result NOK
@@ -242,7 +244,7 @@ class RTL_433_Domoticz_class:
             search_response = urllib2.urlopen(request)
             search_results = search_response.read()
         except:
-            logger.debug("There was an error: Timout URL")
+            logger.error("Timout URL (2)")
             # return 0
             pass
         results = json.loads(search_results)
@@ -258,7 +260,7 @@ class RTL_433_Domoticz_class:
         try:
             search_response = urllib2.urlopen(request, timeout=4)
         except urllib2.URLError, e:
-            logger.debug("There was an error: Timout URL")
+            logger.error("Timout URL (3)")
             pass
             return 0
         search_results = search_response.read()
@@ -282,7 +284,7 @@ class RTL_433_Domoticz_class:
                 logger.debug('Successful')
             return 1  # Result OK
         except:
-            logger.debug("There was an error: Timout URL")
+            logger.error("Timout URL (4)")
             pass
 
         logger.debug('ERROR creating hardware RTL_433')
@@ -311,44 +313,30 @@ class RTL_433_Domoticz_class:
 
 
         device_id = 0
-        try:  # 84 TEMP_HUM_BARO
-            junk = data['Pressure']
-            junk = data['Humidity']
-            junk = data['Temperature']
+        if 'Temperature' in data and 'Humidity' in data and 'Pressure' in data:
             device_id = "84"  # if entry does not exist this step wil not execute
             return device_id
-        except:
-            pass  # try next
-        try:  # 82 TEMP_HUM
-            junk = data['Humidity']
-            junk = data['Temperature']
+        elif 'Temperature' in data and 'Humidity' in data:
             device_id = "82"  # if entry does not exist this step wil not execute
             return device_id
-        except:
-            pass  # try next
 
-        if 'Temperature' in data and not 'Humidity' in data:
+        elif 'Temperature' in data and not 'Humidity' in data:
             # 80 TEMP
             device_id = "80"  # if entry does not exist this step wil not execute
             return device_id
 
-        if 'Humidity' in data and not 'Temperature' in data:
+        elif 'Humidity' in data and not 'Temperature' in data:
             device_id = "81"  # if entry does not exist this step wil not execute
             return device_id
 
-        try:  # 85 RAIN
-            junk = data['Rain']
+        elif 'Rain' in data:
+            # 85 RAIN
             device_id = "85"  # if entry does not exist this step wil not execute
             return device_id
-        except:
-            pass  # try next
-        try:  # 86 WIND
-            junk = data['WB']
+        elif 'WB' in data:  # 86 WIND
             device_id = "86"  # if entry does not exist this step wil not execute
             return device_id
-        except:
-            pass  # try next
-        return  # should not come here!
+        return device_id # should not come here!
 
     def push_data(self, data):
         # self.devicelist[Device_id]="123"
@@ -441,7 +429,7 @@ class RTL_433_Domoticz_class:
 # object initcode checks if server is listening, otherwise exits
 # also sets device RTL_433 to be virtual hardware in Domoticz
 logger = logging.getLogger('rtl433daemon')
-hdlr = logging.FileHandler(rtl_433_logpath+ "/rtl433daemon.log")
+hdlr = logging.FileHandler(rtl_433_logpath + "/rtl433daemon.log")
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
